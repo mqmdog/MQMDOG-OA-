@@ -21,10 +21,10 @@ from django.conf import settings
 
 
 urlpatterns = [
-    path('auth/',include('app.oaauth.url')),
-    path('absent/',include('app.absent.urls')),
-    path('inform/',include('app.inform.url')),
-    path('staff/',include('app.staff.urls')),
-    path('image/',include('app.image.urls')),
-     path('home/',include('app.home.url')),
+    path('api/auth/',include('app.oaauth.url')),
+    path('api/absent/',include('app.absent.urls')),
+    path('api/inform/',include('app.inform.url')),
+    path('api/staff/',include('app.staff.urls')),
+    path('api/image/',include('app.image.urls')),
+     path('api/home/',include('app.home.url')),
 ]+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)

@@ -8,6 +8,7 @@ import jwt
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework.status import HTTP_403_FORBIDDEN
+from django.shortcuts import reverse
 
 # 获取用户模型，这里重命名为 OAUser
 OAUser = get_user_model()
@@ -20,7 +21,7 @@ class LoginCheckMiddleware(MiddlewareMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.white_list=['/auth/login','/staff/active']#白名单
+        self.white_list=[reverse("oaauth:login"),reverse("staff:active_staff")]#白名单
 
     def process_view(self,request,view_func,view_args,view_kwargs): # 登录检查中间件处理函数
         """
