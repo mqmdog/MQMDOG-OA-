@@ -14,8 +14,13 @@ from pathlib import Path
 #导入默认的用户模型,先注释掉，以便重写用户模型
 #from django.contrib.auth.models import User
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+import os
+import environ
+
+env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent
+# 读取.env文件，在服务器项目的根路径上要创建一个
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -97,13 +102,14 @@ WSGI_APPLICATION = 'OA_back.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'XHCoa',
-        'USER':'root',
-        'PASSWORD':'786378',
-        'HOST':'127.0.0.1',#项目上线之后再改成服务器IP地址
-        'PORT':'3306',#数据库端口，MySQL默认3306
+        "NAME": env.str('DB_NAME', 'XHCoa'),
+        "USER": env.str('DB_USER', "root"),
+        "PASSWORD": env.str("DB_PASSWORD", "786378"),
+        "HOST": env.str('DB_HOST', 'localhost'),
+        "PORT": env.str('DB_PORT', 3306),
     }
 }
+
 
 
 # Password validation
@@ -196,20 +202,19 @@ EMAIL_HOST_PASSWORD = 'dephqafxyfrhcjhe'
 DEFAULT_FROM_EMAIL = '3374382168@qq.com'
 
 
-#CELERY配置
-# 中间人的配置
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
-# 指定结果的接受地址
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/2'
 
-#缓存设置
+# Celery相关配置
+CELERY_BROKER_URL = env.str('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/1')# 中间人地址
+CELERY_RESULT_BACKEND = env.str('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:6379/2')# 指定结果的接受地址
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True # 是否在启动时重试连接
+
+# 缓存配置
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/3",
+        "LOCATION": env.str('CACHE_URL', "redis://127.0.0.1:6379/3"),
     }
 }
-
 
 #日志设置
 LOGGING = {
