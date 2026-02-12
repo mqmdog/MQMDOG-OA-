@@ -39,5 +39,5 @@ urlpatterns = [
     path('api/image/',include('app.image.urls')),
     path('api/home/',include('app.home.url')),
     # 自定义媒体文件路由，会经过中间件
-    path('media/<path:path>', debug_media_serve),
+    path('api/media/<path:path>', debug_media_serve),
 ]

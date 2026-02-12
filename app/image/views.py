@@ -26,11 +26,8 @@ class UploadImageView(APIView):
                     "errno": 1,
                     "message": "图片保存失败！"
                 })
-            # 构建完整的绝对URL，避免Nginx反向代理路径问题
-            # 例如: http://192.168.0.12/media/xxx.png
-            scheme = request.scheme
-            host = request.get_host()
-            file_url = f"{scheme}://{host}{settings.MEDIA_URL}{filename}"
+             # abc.png => /media/abc.png
+            file_url = settings.MEDIA_URL + filename
             return Response({
                 "errno": 0, # 注意：值是数字，不能是字符串
                 "data": {
