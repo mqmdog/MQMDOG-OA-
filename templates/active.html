@@ -71,7 +71,7 @@
             return;
         }
 
-        $.post("/staff/active", {email, password}, function (result) {
+        $.post("/api/staff/active", {email, password}, function (result) {
             if (result.code == 200) {
                 alert("激活成功！")
                 window.location = "http://127.0.0.1:5173/#/login"
