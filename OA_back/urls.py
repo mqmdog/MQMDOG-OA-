@@ -18,6 +18,17 @@ Including another URLconf
 from django.urls import path,include
 from django.conf.urls.static import static
 from django.conf import settings
+from django.http import FileResponse
+from django.views.static import serve
+import os
+
+# 自定义媒体文件视图，用于调试 request.path
+def debug_media_serve(request, path):
+    print(f"request.path: {request.path}")
+    file_path = os.path.join(settings.MEDIA_ROOT, path)
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'))
+    return FileResponse(open(os.path.join(settings.MEDIA_ROOT, path), 'rb'))
 
 
 urlpatterns = [
@@ -26,5 +37,7 @@ urlpatterns = [
     path('api/inform/',include('app.inform.url')),
     path('api/staff/',include('app.staff.urls')),
     path('api/image/',include('app.image.urls')),
-     path('api/home/',include('app.home.url')),
-]+static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
+    path('api/home/',include('app.home.url')),
+    # 自定义媒体文件路由，会经过中间件
+    path('media/<path:path>', debug_media_serve),
+]

@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-q(&u5i$_=fdht!0v#md7%g$*fzmr6w%5rs&eea^3xd408n39v2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["192.168.0.195"]#允许所有主机访问，开发阶段使用，生产环境要改成具体的域名
+ALLOWED_HOSTS = ["192.168.0.195", "127.0.0.1"]#允许所有主机访问，开发阶段使用，生产环境要改成具体的域名
 
 
 

@@ -16,7 +16,7 @@ class UploadImageView(APIView):
             # abc.png => sdfsdafsdjag + '.png'
             # os.path.splitext('abc.png') = ('abc', '.png')
             filename = uuid() + os.path.splitext(file.name)[-1]
-            path = settings.MEDIA_ROOT / filename
+            path = settings.MEDIA_ROOT / filename # /media/sdfsdafsdjag.png
             try:
                 with open(path, 'wb') as fp:
                     for chunk in file.chunks():

@@ -21,17 +21,9 @@ class LoginCheckMiddleware(MiddlewareMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.white_list=[reverse("oaauth:login"),reverse("staff:active_staff")]#白名单
+        self.white_list=[reverse("oaauth:login"),reverse("staff:active_staff"),settings.MEDIA_URL]
 
     def process_view(self,request,view_func,view_args,view_kwargs): # 登录检查中间件处理函数
-        """
-        登录检查中间件处理函数
-        :param request: 请求对象
-        :param view_func: 视图函数
-        :param view_args: 视图函数参数
-        :param view_kwargs: 视图函数关键字参数
-        :return: None
-        """
         if request.path in self.white_list or request.path.startswith(settings.MEDIA_URL): # 如果是登录请求，则不进行登录检查
             request.user = AnonymousUser()
             request.auth = None
