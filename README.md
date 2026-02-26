@@ -1,37 +1,126 @@
-# mqmdog_oa_back
+# OA管理系统 - 后端
 
-#### 介绍
-OA系统的后端代码
+## 项目介绍
 
-#### 软件架构
-软件架构说明
+这是一个基于Django和Django REST Framework开发的企业办公自动化（OA）系统后端。系统提供了用户认证、考勤管理、通知公告、员工管理等企业日常办公所需的功能模块。
 
+## 技术栈
 
-#### 安装教程
+- **后端框架**: Django 5.0.3
+- **API框架**: Django REST Framework
+- **数据库**: MySQL
+- **缓存**: Redis
+- **异步任务**: Celery
+- **认证方式**: Token认证
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 功能模块
 
-#### 使用说明
+- **用户认证模块** (oaauth): 用户登录、权限管理、部门管理
+- **考勤模块** (absent): 请假申请、审批流程
+- **通知模块** (inform): 通知发布、部门可见性控制
+- **员工模块** (staff): 员工信息管理
+- **图片模块** (image): 图片上传管理
+- **首页模块** (home): 数据统计、最新信息展示
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+## 环境准备
 
-#### 参与贡献
+1. 安装 Python 3.8+
+2. 安装 MySQL 和 Redis
+3. 安装 Git
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+## 安装部署
 
+### 1. 克隆项目
 
-#### 特技
+```bash
+git clone <your-repository-url>
+cd OA_system
+```
 
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+### 2. 创建虚拟环境并安装依赖
+
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或
+venv\Scripts\activate  # Windows
+
+pip install -r requirements.txt
+```
+
+### 3. 配置环境变量
+
+复制 `.env.example` 为 `.env` 并填写实际配置：
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env` 文件，配置数据库连接、邮件设置等信息。
+
+### 4. 数据库迁移
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+### 5. 创建初始数据
+
+```bash
+# 创建超级用户
+python manage.py createsuperuser
+
+# 初始化部门和用户
+python manage.py initdepartments
+python manage.py inituser
+python manage.py initabsenttype
+```
+
+### 6. 启动服务
+
+```bash
+# 启动开发服务器
+python manage.py runserver
+
+# 启动Celery worker（另开终端）
+celery -A OA_back worker --loglevel=info
+```
+
+## 项目结构
+
+```
+OA_system/
+├── OA_back/          # Django项目配置
+├── app/              # 应用模块
+│   ├── absent/       # 考勤模块
+│   ├── home/         # 首页模块
+│   ├── image/        # 图片模块
+│   ├── inform/       # 通知模块
+│   ├── oaauth/       # 认证模块
+│   └── staff/        # 员工模块
+├── templates/        # 模板文件
+├── utils/            # 工具函数
+├── static/           # 静态文件
+├── media/            # 媒体文件
+├── requirements.txt  # 依赖包
+└── manage.py         # Django管理脚本
+```
+
+## 安全说明
+
+- 项目使用 `.env` 文件管理敏感配置，请勿将此文件提交到版本控制系统
+- 生产环境请确保 `DEBUG=False` 并配置适当的 `ALLOWED_HOSTS`
+- 邮件密码等敏感信息应使用应用专用密码
+
+## 参与贡献
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+## 许可证
+
+该项目遵循 MIT 许可证 - 查阅 `LICENSE` 文件了解详情
