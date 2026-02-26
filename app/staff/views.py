@@ -33,12 +33,15 @@ aes = aeser.AESCipher(settings.SECRET_KEY)  # 创建AES对象
 
 
 def send_active_email(request, email):
+    #1.加密邮件生成token
     token = aes.encrypt(email)
+
+    # 2. 构造激活链接
     # /staff/active?token=xxx
     active_path = reverse('staff:active_staff') + '?' + parse.urlencode({'token': token})
     # http://127.0.0.1:8000/staff/active?token=xxx
     # http://127.0.0.1:8000/staff/active?token=RjgSom2/sCUNAIJ/I5/0p49X5hdLD5IpNq61vJ2kj9e1vBL/hmrURC2IH8nU+L0q
-    active_url = request.build_absolute_uri(active_path)
+    active_url = request.build_absolute_uri(active_path)  # 完整URL
     # 发送一个链接，让用户点击这个链接后，跳转到激活的页面，才能激活
     # 为了区分用户，在发送链接的邮件中，该链接中应该要包含这个用户的邮箱
     # 针对邮箱要进行加密：AES
@@ -47,8 +50,8 @@ def send_active_email(request, email):
     # send_mail(f'XHC-OA账号激活', recipient_list=[email], message=message,from_email=settings.DEFAULT_FROM_EMAIL)
     send_mail_task.delay(email, subject, message)
 
-# Create your views here.
 
+# 返回所有部门列表（GET /api/departments）
 class DepartmentListView(ListAPIView):
     queryset = OAdepartment.objects.all()
     serializer_class = DepartmentSerializer
@@ -58,19 +61,23 @@ class DepartmentListView(ListAPIView):
 #1.用户访问激活的连接的时候，会返回一个含有表单的页面，视图中可以获取到token，为了在用户提交表单的时候，post函数中能知道这个token
 #我们可以在返回页面之前，先把token存储在cookie中
 #2.校验用户上传的邮箱和密码是否正确，并且解密token中的邮箱，与用户提交的邮箱进行对比，如果都相同，那么就是激活成功
+
+# 激活员工
 class ActiveStaffView(View):
-    #激活员工
     def get(self,request):
         #获取token，并且吧token存储在cookie中，方便下次用户传过来
         token = request.GET.get('token')
         response=render(request,'active.html')
         response.set_cookie('token', token)
         return response
+
     def post(self, request):
        #从cookie中获取token
         try:
+            #  从 cookie 获取 token 并解密
             token = request.COOKIES.get('token')
             email = aes.decrypt(token)
+            # 验证邮箱和密码
             serializer = ActiveStaffSerializer(data=request.POST)
             if serializer.is_valid():
                 form_email = serializer.validated_data.get('email')
@@ -88,10 +95,12 @@ class ActiveStaffView(View):
         except Exception as e:
             return JsonResponse({'code':400,'message':'token错误！'})
 
+
+# 获取员工列表
 class StaffView(generics.ListCreateAPIView):
-    #获取员工列表
     queryset=OAUser.objects.all()
     pagination_class = StaffPagination
+
     def get_serializer_class(self):
        if self.request.method=='GET':
            return UserSerializer
@@ -133,6 +142,7 @@ class StaffView(generics.ListCreateAPIView):
         else:
             return Response(data={'detail':list(serializer.errors.values())[0][0]}, status=status.HTTP_400_BAD_REQUEST)
 
+    # 发送激活邮件
     def send_active_email(self, email):
         token=aes.encrypt(email)
         #/staff/active?token=xxx
@@ -151,7 +161,6 @@ class StaffView(generics.ListCreateAPIView):
 
 
 class StaffViewSet(viewsets.GenericViewSet,mixins.CreateModelMixin,mixins.ListModelMixin,mixins.UpdateModelMixin):
-    #获取员工列表
     queryset=OAUser.objects.all()
     pagination_class = StaffPagination
     def get_serializer_class(self):
@@ -159,7 +168,8 @@ class StaffViewSet(viewsets.GenericViewSet,mixins.CreateModelMixin,mixins.ListMo
            return UserSerializer
        else:
            return AddStaffSerializer
-
+    
+    # 获取员工列表
     def get_queryset(self):
         department_id = self.request.query_params.get('department_id')
         realname = self.request.query_params.get('realname')
@@ -240,13 +250,15 @@ class StaffViewSet(viewsets.GenericViewSet,mixins.CreateModelMixin,mixins.ListMo
 
 
 
-
+# 测试celery
 class TestCeleryView(APIView):
     def get(self, request):
         #用celery异步执行debug_task这个任务
         debug_task.delay()
         return Response({'成功'})
 
+
+# 下载员工信息
 class StaffDownloadView(APIView):
     def get(self, request):
         # /staff/download?pks=[x,y]
@@ -256,7 +268,8 @@ class StaffDownloadView(APIView):
             pks = json.loads(pks)
         except Exception:
             return Response({"detail": "员工参数错误！"}, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        #权限检查
         try:
             current_user = request.user
             queryset = OAUser.objects
@@ -266,6 +279,8 @@ class StaffDownloadView(APIView):
                 else:
                     # 如果是部门的leader，那么就先过滤为本部门的员工
                     queryset = queryset.filter(department_id=current_user.department_id)
+            
+            # 查询并导出数据
             queryset = queryset.filter(pk__in=pks)
             result = queryset.values("realname", "email", "department__name", 'date_joined', 'status')
             staff_df = pd.DataFrame(list(result))
@@ -274,7 +289,8 @@ class StaffDownloadView(APIView):
                          'status': '状态'})
             response = HttpResponse(content_type='application/xlsx')
             response['Content-Disposition'] = "attachment; filename=员工信息.xlsx"
-            # 把staff_df写入到Response中
+
+            #返回Excel文件
             with pd.ExcelWriter(response) as writer:
                 staff_df.to_excel(writer, sheet_name='员工信息')
             return response
@@ -282,19 +298,22 @@ class StaffDownloadView(APIView):
             print(e)
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+# 上传员工信息
 class StaffUploadView(APIView):
     def post(self, request):
         serializer = StaffUploadSerializer(data=request.data)
+        # 验证数据
         if serializer.is_valid():
             file = serializer.validated_data.get('file')
             current_user = request.user
             if current_user.department.name != '董事会' or current_user.department.leader_id != current_user.uid:
                 return Response({"detail": "您没有权限访问！"}, status=status.HTTP_403_FORBIDDEN)
-
+            # 读取Excel文件中的数据
             staff_df = pd.read_excel(file)
+            # 创建用户列表，用于批量创建用户
             users = []
             for index, row in staff_df.iterrows():
-                # 获取部门
+                # 获取部门，如果当前用户不是董事会的leader，那么就只能添加本部门的员工
                 if current_user.department.name != '董事会':
                     department = current_user.department
                 else:
@@ -314,6 +333,7 @@ class StaffUploadView(APIView):
                     users.append(user)
                 except Exception:
                     return Response({"detail": "请检查文件中邮箱、姓名、部门名称！"}, status=status.HTTP_400_BAD_REQUEST)
+            # 批量创建用户
             try:
                 # 原子操作（事务）
                 with transaction.atomic():

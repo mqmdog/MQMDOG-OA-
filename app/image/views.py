@@ -12,14 +12,16 @@ class UploadImageView(APIView):
         # 2. .png/.jpg/.jpeg, .txt/.py
         serializer = UploadImageSerializer(data=request.data)
         if serializer.is_valid():
-            file = serializer.validated_data.get('image')
+            file = serializer.validated_data.get('image')# 获取验证后的文件对象
             # abc.png => sdfsdafsdjag + '.png'
             # os.path.splitext('abc.png') = ('abc', '.png')
+            #生成新的文件名
             filename = uuid() + os.path.splitext(file.name)[-1]
+            # 拼接完整保存路径
             path = settings.MEDIA_ROOT / filename # /media/sdfsdafsdjag.png
             try:
                 with open(path, 'wb') as fp:
-                    for chunk in file.chunks():
+                    for chunk in file.chunks(): # 分块写入文件
                         fp.write(chunk)
             except Exception:
                 return Response({
@@ -28,6 +30,7 @@ class UploadImageView(APIView):
                 })
              # abc.png => /media/abc.png
             file_url = settings.MEDIA_URL + filename
+            # 返回成功响应（符合 Editor.md / Markdown 编辑器图片上传格式）
             return Response({
                 "errno": 0, # 注意：值是数字，不能是字符串
                 "data": {

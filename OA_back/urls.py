@@ -21,6 +21,7 @@ from django.conf import settings
 from django.http import FileResponse
 from django.views.static import serve
 import os
+from django.http import HttpResponseNotFound
 
 # 自定义媒体文件视图，用于调试 request.path
 def debug_media_serve(request, path):
@@ -28,7 +29,7 @@ def debug_media_serve(request, path):
     file_path = os.path.join(settings.MEDIA_ROOT, path)
     if os.path.exists(file_path):
         return FileResponse(open(file_path, 'rb'))
-    return FileResponse(open(os.path.join(settings.MEDIA_ROOT, path), 'rb'))
+    return HttpResponseNotFound("文件不存在")
 
 
 urlpatterns = [
@@ -41,3 +42,22 @@ urlpatterns = [
     # 自定义媒体文件路由，会经过中间件
     path('api/media/<path:path>', debug_media_serve),
 ]
+
+# HTTP请求（如 GET /api/home/latest/inform）
+#     ↓
+# Django URL解析（从上往下依次匹配urlpatterns）
+#     ↓
+# 【步骤1】匹配主URL配置（OA_back/urls.py的urlpatterns）
+#     ├─ 找到 path('api/home/', include('app.home.url'))
+#     ├─ 截断前缀 'api/home/'，剩余部分 'latest/inform'
+#     ↓
+# 【步骤2】进入子应用URL配置（app/home/url.py的urlpatterns）
+#     ├─ 继续匹配 'latest/inform'
+#     ├─ 找到 path('latest/inform', views.LatestInformView.as_view(), name='latest_inform')
+#     ├─ 完全匹配，找到对应的视图类
+#     ↓
+# 【步骤3】执行视图类
+#     ├─ LatestInformView.as_view() 返回一个视图函数
+#     ├─ Django自动调用该函数，传入request对象
+#     ↓
+# HTTP响应（JSON格式的通知数据）

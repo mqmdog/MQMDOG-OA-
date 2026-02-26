@@ -1,10 +1,14 @@
 import os
-from celery import Celery
-from celery.signals import after_setup_logger
-import logging
+from celery import Celery #Celery框架核心类，用于创建任务队列实例
+from celery.signals import after_setup_logger#Celery日志信号，用于在任务执行时记录日志
+import logging#Python标准库，用于日志记录
 
 # 设置django的settings模块，celery会读取这个模块中的配置信息
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'OA_back.settings')
+# 上下文共享：Celery需要知道Django的配置（数据库、邮件设置、缓存等）
+# 模块导入：设置后，Celery可以自动加载Django的settings模块
+# 配置统一：避免在两个地方维护相同的配置信息
+
 
 # 创建celery实例
 app = Celery('OA_back')

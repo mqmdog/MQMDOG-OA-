@@ -12,6 +12,7 @@ def generate_jwt(user):#生成JWT token
     #参数为payload，key，algorithm
 
 
+
 class UserTokenAuthentication(BaseAuthentication): #
     """这是一个桥接类，用于在某些特定场景下将Django的原生认证转换为DRF格式。"""
     def authenticate(self, request):

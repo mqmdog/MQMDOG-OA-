@@ -6,6 +6,7 @@ from django.core.validators import  FileExtensionValidator
 OAUser = get_user_model()
 
 
+# 添加员工序列化器
 class AddStaffSerializer(serializers.Serializer):
     realname = serializers.CharField(max_length=20, error_messages={"required": "请输入用户名！"})
     email = serializers.EmailField(error_messages={"required": "请输入邮箱！", 'invalid': '请输入正确格式的邮箱！'})
@@ -22,7 +23,9 @@ class AddStaffSerializer(serializers.Serializer):
         if request.user.department.leader.uid != request.user.uid:
             raise serializers.ValidationError('非部门leader不能添加员工！')
         return attrs
-class ActiveStaffSerializer(serializers.Serializer):#激活员工
+
+# 激活员工序列化器
+class ActiveStaffSerializer(serializers.Serializer):
     email = serializers.EmailField(error_messages={"required": "请输入邮箱！", 'invalid': '请输入正确格式的邮箱！'})
     password = serializers.CharField(max_length=20, error_messages={"required": '请输入密码！'})
 
@@ -35,8 +38,9 @@ class ActiveStaffSerializer(serializers.Serializer):#激活员工
         attrs['user']=user
         return attrs
 
+# 上传员工信息序列化器
 class StaffUploadSerializer(serializers.Serializer):#上传员工信息
     file = serializers.FileField(
         validators=[FileExtensionValidator(['xlsx','xls'])],
-        error_messages={'required': '请上传图片！'}
+        error_messages={'required': '请上传员工信息文件！'}
     )

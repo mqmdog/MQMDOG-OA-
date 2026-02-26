@@ -1,7 +1,7 @@
 from django.db import models
 from app.oaauth.models import OAUser, OAdepartment
 
-
+# 通知
 class Inform(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField()
@@ -14,8 +14,8 @@ class Inform(models.Model):
     class Meta:
         ordering = ('-create_time', )
 
-
-class InformRead(models.Model):#什么人什么时间查看过某条通知
+# 什么人什么时间查看过某条通知
+class InformRead(models.Model):
     inform = models.ForeignKey(Inform, on_delete=models.CASCADE, related_name='reads', related_query_name='reads')
     user = models.ForeignKey(OAUser, on_delete=models.CASCADE, related_name='reads', related_query_name='reads')
     read_time = models.DateTimeField(auto_now_add=True)
