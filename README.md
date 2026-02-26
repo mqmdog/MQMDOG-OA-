@@ -19,8 +19,8 @@
 - **考勤模块** (absent): 请假申请、审批流程
 - **通知模块** (inform): 通知发布、部门可见性控制
 - **员工模块** (staff): 员工信息管理
-- **图片模块** (image): 图片上传管理
-- **首页模块** (home): 数据统计、最新信息展示
+- **........
+
 
 ## 环境准备
 
@@ -87,40 +87,4 @@ python manage.py runserver
 celery -A OA_back worker --loglevel=info
 ```
 
-## 项目结构
 
-```
-OA_system/
-├── OA_back/          # Django项目配置
-├── app/              # 应用模块
-│   ├── absent/       # 考勤模块
-│   ├── home/         # 首页模块
-│   ├── image/        # 图片模块
-│   ├── inform/       # 通知模块
-│   ├── oaauth/       # 认证模块
-│   └── staff/        # 员工模块
-├── templates/        # 模板文件
-├── utils/            # 工具函数
-├── static/           # 静态文件
-├── media/            # 媒体文件
-├── requirements.txt  # 依赖包
-└── manage.py         # Django管理脚本
-```
-
-## 安全说明
-
-- 项目使用 `.env` 文件管理敏感配置，请勿将此文件提交到版本控制系统
-- 生产环境请确保 `DEBUG=False` 并配置适当的 `ALLOWED_HOSTS`
-- 邮件密码等敏感信息应使用应用专用密码
-
-## 参与贡献
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-## 许可证
-
-该项目遵循 MIT 许可证 - 查阅 `LICENSE` 文件了解详情
