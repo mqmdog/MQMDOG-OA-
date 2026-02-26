@@ -1,9 +1,18 @@
 from rest_framework import serializers  # 导入序列化器模块
 from .models import OAUser, UserStatusChoices, OAdepartment
-from rest_framework import exceptions
+from rest_framework import exceptions  # 导入异常模块
 
+# Serializer (DRF基类)
+#     │
+#     ├── Serializer (普通序列化器)
+#     │       │
+#     │       └── LoginSerializer  (自定义)
+#     │
+#     └── ModelSerializer (模型序列化器)
+#             │
+#             └── UserSerializer, DepartmentSerializer
 
-class LoginSerializer(serializers.Serializer):  # 定义一个登录序列化器
+class LoginSerializer(serializers.Serializer):  
     email = serializers.EmailField(required=True, error_messages={"required": "请输入邮箱！"})  # 邮箱字段，必填，错误信息自定义
     password = serializers.CharField(max_length=20, min_length=4)  # 密码字段，最大长度20，最小长度4
 
@@ -13,6 +22,7 @@ class LoginSerializer(serializers.Serializer):  # 定义一个登录序列化器
 
         if email and password:  # 如果邮箱和密码都存在
             user = OAUser.objects.filter(email=email).first()  # 根据邮箱查询用户，如果存在则返回第一个用户对象，否则返回None
+            #等价于 SELECT * FROM oaauth_oauser WHERE email = 'xxx@qq.com' LIMIT 1;
             if not user:  # 如果用户不存在
                 raise serializers.ValidationError("用户不存在")  # 抛出验证错误异常
             if not user.check_password(password):  # 如果密码不正确
@@ -29,18 +39,27 @@ class LoginSerializer(serializers.Serializer):  # 定义一个登录序列化器
         return attrs  # 返回验证后的数据
 
 
-class DepartmentSerializer(serializers.ModelSerializer):  # 定义一个部门序列化器，继承自ModelSerializer
-    class Meta:  # 元类，定义序列化器的元信息
+class DepartmentSerializer(serializers.ModelSerializer):#自动将OAdepartment模型转换为JSON
+    class Meta:  #告诉序列化器使用哪个模型、包含哪些字段
         model = OAdepartment  # 指定序列化器对应的模型类
         fields = "__all__"  # 指定要序列化的字段为所有字段
+        
+        # # 方式1：所有字段
+        # fields = "__all__"
+        # 
+        # # 方式2：指定字段列表
+        # fields = ["id", "name", "intro"]
+        # 
+        # # 方式3：排除字段
+        # exclude = ["id", "create_time"]
+        
 
 
-class UserSerializer(serializers.ModelSerializer):  # 定义一个用户序列化器，继承自ModelSerializer
-    department = DepartmentSerializer()  # 嵌套部门序列化器，只读
+class UserSerializer(serializers.ModelSerializer): 
+    department = DepartmentSerializer()  # 嵌套部门序列化器，在用户数据中包含部门详细信息
 
     class Meta:  # 元类，定义序列化器的元信息
         model = OAUser  # 指定序列化器对应的模型类
-        # fields="__all__"#指定要序列化的字段
         exclude = ['password', 'groups', 'user_permissions']  # 排除密码、用户组（内置的）和用户权限（内置的）字段
 
 
@@ -53,6 +72,25 @@ class ResetPwdSerializer(serializers.Serializer):
         oldpwd = attrs['oldpwd']
         pwd1 = attrs['pwd1']
         pwd2 = attrs['pwd2']
+
+        # ┌─────────────────────────────────────────────────────────────────┐
+        # │                    context
+        # 传递流程                              
+        # │                                                                 
+        # │  视图中：                                                       
+        # │  ┌─────────────────────────────────────────────────────────┐   
+        # │  │ serializer = ResetPwdSerializer(                        
+        # │  │     data = request.data,                                    
+        # │  │     context = {'request': request}  ← 传递context        
+        # │  │ )                                                           
+        # │  └─────────────────────────────────────────────────────────┘   
+        # │                           ↓                                     
+        # │  序列化器中：                                                   
+        # │  ┌─────────────────────────────────────────────────────────┐   
+        # │  │ user = self.context['request'].user  ← 获取当前用户       
+        # │  └─────────────────────────────────────────────────────────┘   
+        # │                                                                 │
+        # └─────────────────────────────────────────────────────────────────┘
 
         # 从上下文中获取当前用户
         user = self.context['request'].user

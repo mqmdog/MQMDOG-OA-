@@ -1,14 +1,26 @@
-from django.contrib.auth.models import AnonymousUser
-from django.http import JsonResponse
+#全局登录检查中间件，用于在每个请求到达视图之前验证用户的登录状态：
+from django.contrib.auth.models import AnonymousUser # 匿名用户类，用于表示未认证的用户
+from django.http import JsonResponse #返回JSON格式的Http响应
 from django.utils.deprecation import MiddlewareMixin
 from rest_framework.authentication import get_authorization_header
 from rest_framework import exceptions
-from jwt import ExpiredSignatureError
-import jwt
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from rest_framework.status import HTTP_403_FORBIDDEN
-from django.shortcuts import reverse
+from jwt import ExpiredSignatureError # JWT过期错误类
+import jwt # JSON Web Token库
+from django.conf import settings # Django设置模块
+from django.contrib.auth import get_user_model # 获取用户模型
+from rest_framework.status import HTTP_403_FORBIDDEN # HTTP 403状态码
+from django.shortcuts import reverse # 反向解析URL
+# ┌─────────────────────────────────────────────────────────────────┐
+# │                       中间件职责                                  │
+# │                                                                 │
+# │   客户端请求 ──→ 中间件检查Token ──→ 验证通过 ──→ 视图处理     │
+# │                      ↓                                          │
+# │                 白名单路径 ──→ 直接放行 ──→ 视图处理           │
+# │                      ↓                                          │
+# │                 Token无效 ──→ 返回403 ──→ 请求结束             │
+# │                                                                 │
+# └─────────────────────────────────────────────────────────────────┘
+
 
 # 获取用户模型，这里重命名为 OAUser
 OAUser = get_user_model()
@@ -21,13 +33,14 @@ class LoginCheckMiddleware(MiddlewareMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.white_list=[reverse("oaauth:login"),reverse("staff:active_staff")]
+        self.white_list=[reverse("oaauth:login"),reverse("staff:active_staff")] # 白名单路径列表，用于存放不需要登录检查的路径
 
-    def process_view(self,request,view_func,view_args,view_kwargs): # 登录检查中间件处理函数
-        if request.path in self.white_list or request.path.startswith('/api'+ settings.MEDIA_URL): # 如果是登录请求，则不进行登录检查
-            request.user = AnonymousUser()
-            request.auth = None
-            return None
+    def process_view(self,request,view_func,view_args,view_kwargs): # 视图函数执行之前进行拦截处
+        # 如果是白名单路径，则不进行登录检查;路径是媒体文件，放行
+        if request.path in self.white_list or request.path.startswith('/api'+ settings.MEDIA_URL):
+            request.user = AnonymousUser() #设置为匿名用户
+            request.auth = None #无认证信息
+            return None #返回None，继续执行视图
         try:
             auth = get_authorization_header(request).split()  # 获取请求头中的授权信息并拆分
 

@@ -8,6 +8,34 @@ from django.contrib.auth.models import User, AbstractBaseUser,PermissionsMixin, 
 from django.contrib.auth.hashers import make_password #密码加密相关的函数
 from shortuuidfield import ShortUUIDField #短UUID字段，全球唯一，用来当做主键替
 
+"""
+用户模型 (OAUser)：重写Django内置用户认证系统
+部门模型 (OAdepartment)：组织架构管理
+用户管理器 (OAUserManager)：创建用户的业务逻辑
+状态枚举 (UserStatusChoices)：用户状态选项
+"""
+#
+# Django内置类
+#      │
+#      ├── models.Model  (Django ORM基类)
+#      │        ↓
+#      ├── AbstractBaseUser  (用户核心功能)
+#      │        ↓
+#      │   ┌───┴───┐
+#      │   │       │
+#      │   OAUser  (自定义用户模型)
+#      │        │
+#      ├── PermissionsMixin  (权限功能)
+#      │        ↓
+#      │   ┌───┴───┐
+#      │   │       │
+#      │   OAUser
+#      │
+#      └── BaseUserManager  (用户管理器基类)
+#               ↓
+#         OAUserManager
+
+
 # 定义用户状态的选择枚举类，定义三种属性，可以用  UserStatusChoices.属性  获取
 class UserStatusChoices(models.IntegerChoices):
     ACTIVED = 1 #激活
@@ -19,8 +47,9 @@ class OAUserManager(BaseUserManager):
     自定义用户管理器
     继承BaseUserManager：Django内置的用户管理器基类
     """
-    use_in_migrations = True
+    use_in_migrations = True # 是否用于迁移操作
 
+    #这是类的受保护方法，子类可以重写，不宜在类外部直接调用
     def _create_user(self, realname, email, password, **extra_fields):#下面的OAUser并没有定义password字段，但是其父类AbstractBaseUser定义了
         if not realname:
             raise ValueError("必须设置真实姓名")
@@ -53,7 +82,7 @@ class OAUserManager(BaseUserManager):
 #重写User模型，改为OAUser
 class OAUser(AbstractBaseUser, PermissionsMixin):
     #用户名字段
-    uid=ShortUUIDField(primary_key=True)#主键字段，使用短UUID，短uuid是一种随机字符串，全球唯一，长度为22
+    uid=ShortUUIDField(primary_key=True)#主键字段，使用短UUID，防止URL暴露用户数量（如 user/1, user/2），避免ID枚举攻击
     realname = models.CharField(
         max_length=150,#最大长度
         unique=False,#唯一值，考虑到有同名的可能性
@@ -67,16 +96,10 @@ class OAUser(AbstractBaseUser, PermissionsMixin):
 
     #专门做用户和部门直接绑定的关系,由于OAdepartment在OAUser后面定义，所以用字符串形式引用（在 OAUser 中引用了 OAdepartment，而 OAdepartment又引用了 OAUser。使用字符串引用来避免循环导入）
     department = models.ForeignKey('OAdepartment', null=True, on_delete=models.SET_NULL, related_name='staffs', related_query_name='staffs')
-
-    objects = OAUserManager()#User.objects.all()的由来，依旧重写
-
-    EMAIL_FIELD = "email"
-    #USERNAME_FIELD是用来做鉴别权限的字段，邮箱不会重复，而用户名可能重复，会把authenticate中的username参数传递给USERNAME_FIELD指定的字段进行鉴别
-    #from django.contrib.auth import authenticate
-    #authenticate(request, username='xxx@qq.com', password='xxx')  # 这里的username要传email字段，不必去authenticate类中修改，这里改成USERNAME_FIELD = "email"即可实现
-    USERNAME_FIELD = "email"
-    #指定哪些字段是必须的，但是不能重复包含USERNAME_FIELD和EMAIL_FIELD已经设置过的值
-    REQUIRED_FIELDS = ["realname",'password']#到了这一步，以后在创建用户时，email、realname和password都是必填的
+    objects = OAUserManager()#User.objects.all()的由来为什么这里要写呢？因为Django的认证系统默认使用User模型，而我们重写成了OAUser模型，所以这里要写，否则Django会默认使用User模型，而我们希望使用OAUser模型
+    EMAIL_FIELD = "email" #定义在OAUser模型类中的类属性，指定哪个字段是邮箱字段，Django的某些功能会使用这个字段发送邮件通知
+    USERNAME_FIELD = "email" #默认 USERNAME_FIELD = "username"；但我们项目中 email 才是唯一的，所以需要改为 USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["realname",'password']#定义创建用户时的必填字段；完整必填字段列表 = [USERNAME_FIELD] + REQUIRED_FIELDS= = ["email", "realname", "password"]
 
     def clean(self):#clean方法用于在保存模型之前对数据进行清理和验证
         super().clean()#调用父类的clean方法
